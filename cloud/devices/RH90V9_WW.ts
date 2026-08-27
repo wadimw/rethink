@@ -15,6 +15,26 @@ const parseEnum = <T extends Record<number, string>>(enumObj: T, value: number) 
     return enumObj[value as keyof T]
 }
 
+const parseDuration = (
+    valueHour: number,
+    valueMinute: number,
+    hourRange: [number, number],
+    minuteRange: [number, number],
+) => {
+    if (
+        !(
+            hourRange[0] <= valueHour &&
+            valueHour <= hourRange[1] &&
+            minuteRange[0] <= valueMinute &&
+            valueMinute <= minuteRange[1]
+        )
+    ) {
+        // TODO log unexpected value
+        return undefined
+    }
+    return valueHour * 60 + valueMinute
+}
+
 const UNKNOWN = 'unknown' as const
 
 // note: all enum values are derived from label referenced by the modelJson;
@@ -50,6 +70,9 @@ type ProcessState = ValueOf<typeof PROCESS_STATES>
 interface DeviceState {
     state: State | undefined
     processState: ProcessState | undefined
+    reserveTime: number | undefined
+    remainTime: number | undefined
+    initialTime: number | undefined
 }
 
 export default class Device extends AABBDevice {
@@ -77,6 +100,30 @@ export default class Device extends AABBDevice {
                         device_class: 'enum',
                         options: Object.values(PROCESS_STATES),
                     },
+                    reserve_time: {
+                        platform: 'sensor',
+                        unique_id: '$deviceid-reserve_time',
+                        state_topic: '$this/reserve_time',
+                        device_class: 'duration',
+                        unit_of_measurement: 'min',
+                        name: 'Delay End', // @WM_DRY24_STATE_RESERVATION_W
+                    },
+                    remain_time: {
+                        platform: 'sensor',
+                        unique_id: '$deviceid-remain_time',
+                        state_topic: '$this/remain_time',
+                        device_class: 'duration',
+                        unit_of_measurement: 'min',
+                        name: 'Remain time',
+                    },
+                    initial_time: {
+                        platform: 'sensor',
+                        unique_id: '$deviceid-initial_time',
+                        state_topic: '$this/initial_time',
+                        device_class: 'duration',
+                        unit_of_measurement: 'min',
+                        name: 'Initial time',
+                    },
                 },
             }),
         )
@@ -101,17 +148,29 @@ export default class Device extends AABBDevice {
     // extracts data from this dryer's device state block
     private parseDeviceStateBlock(b: Buffer): DeviceState {
         const state = b[0]
+        const remainTimeHour = b[1]
+        const remainTimeMinute = b[2]
+        const initialTimeHour = b[3]
+        const initialTimeMinute = b[4]
         const processState = b[9]
+        const reserveTimeHour = b[10]
+        const reserveTimeMinute = b[11]
 
         return {
             state: parseEnum(STATES, state),
             processState: parseEnum(PROCESS_STATES, processState),
+            reserveTime: parseDuration(reserveTimeHour, reserveTimeMinute, [3, 19], [0, 59]),
+            remainTime: parseDuration(remainTimeHour, remainTimeMinute, [0, 30], [0, 59]),
+            initialTime: parseDuration(initialTimeHour, initialTimeMinute, [0, 30], [0, 59]),
         }
     }
 
     private publishState(deviceState: DeviceState) {
         this.publishProperty('state', deviceState.state ?? UNKNOWN)
         this.publishProperty('process_state', deviceState.processState ?? UNKNOWN)
+        this.publishProperty('reserve_time', deviceState.reserveTime ?? UNKNOWN)
+        this.publishProperty('remain_time', deviceState.remainTime ?? UNKNOWN)
+        this.publishProperty('initial_time', deviceState.initialTime ?? UNKNOWN)
     }
 
     setProperty(prop: string, mqttValue: string) {}
