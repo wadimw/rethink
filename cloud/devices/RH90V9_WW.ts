@@ -111,6 +111,7 @@ export default class Device extends AABBDevice {
 
     private publishState(deviceState: DeviceState) {
         this.publishProperty('state', deviceState.state ?? UNKNOWN)
+        this.publishProperty('process_state', deviceState.processState ?? UNKNOWN)
     }
 
     setProperty(prop: string, mqttValue: string) {}
