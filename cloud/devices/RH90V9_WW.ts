@@ -17,21 +17,21 @@ const parseEnum = <T extends Record<number, string>>(enumObj: T, value: number) 
 
 const UNKNOWN = 'unknown' as const
 
-// note: in this dryer's modelJson, some `MonitoringValue` entries have mismatched enum name and label
-// - in these cases, implemented value is derived from the label rather than from enum's name
-// e.g.: `ecoHybrid` value 3 is named `ECOHYBRID_TURBO` but has label `@WM_DRY24_ECO_HYBRID_TIME_W`
-// hence it's labeled "Time" rather than "Turbo"; each such mismatch is explicitly annotated
+// note: all enum values are derived from label referenced by the modelJson;
+// in some cases, this is slightly mismatched,
+// e.g. `ecoHybrid` value 3 is named `ECOHYBRID_TURBO` but has label ref
+// `@WM_DRY24_ECO_HYBRID_TIME_W` - hence it's labeled "Time" (rather than "Turbo")
 
 // modelJson: MonitoringValue.state
 const STATES = {
-    0: 'Off',
-    1: 'Initial',
-    2: 'Drying', // enum RUNNING label @WM_STATE_DRYING_W
+    0: 'Power OFF',
+    1: 'Standby',
+    2: 'Drying',
     3: 'Paused',
-    4: 'End',
+    4: 'Finished',
     5: 'Error',
-    8: 'Smart Diagnosis', // enum AUDIBLE_DIAGNOSIS label @WM_STATE_SMART_DIAGNOSIS_W
-    100: 'Reserved',
+    8: 'Smart Diagnosis in Progress',
+    100: 'Delay Set',
 } as const
 type State = ValueOf<typeof STATES>
 
