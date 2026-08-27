@@ -35,8 +35,21 @@ const STATES = {
 } as const
 type State = ValueOf<typeof STATES>
 
+export const PROCESS_STATES = {
+    0: 'Detecting Load Level',
+    1: 'Steam',
+    2: 'Dry', // DRY_LV1
+    3: 'Dry', // DRY_LV2
+    4: 'Dry', // DRY_LV3
+    5: 'Cooling',
+    6: 'Anti-crease',
+    7: 'Finished',
+} as const
+type ProcessState = ValueOf<typeof PROCESS_STATES>
+
 interface DeviceState {
     state: State | undefined
+    processState: ProcessState | undefined
 }
 
 export default class Device extends AABBDevice {
@@ -54,6 +67,15 @@ export default class Device extends AABBDevice {
                         icon: 'mdi:state-machine',
                         device_class: 'enum',
                         options: Object.values(STATES),
+                    },
+                    process_state: {
+                        platform: 'sensor',
+                        unique_id: '$deviceid-process_state',
+                        state_topic: '$this/process_state',
+                        name: 'Process state',
+                        icon: 'mdi:cog-outline',
+                        device_class: 'enum',
+                        options: Object.values(PROCESS_STATES),
                     },
                 },
             }),
@@ -79,9 +101,11 @@ export default class Device extends AABBDevice {
     // extracts data from this dryer's device state block
     private parseDeviceStateBlock(b: Buffer): DeviceState {
         const state = b[0]
+        const processState = b[9]
 
         return {
             state: parseEnum(STATES, state),
+            processState: parseEnum(PROCESS_STATES, processState),
         }
     }
 
