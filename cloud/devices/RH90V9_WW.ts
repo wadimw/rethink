@@ -44,45 +44,45 @@ const UNKNOWN = 'unknown' as const
 
 // modelJson: MonitoringValue.state
 const STATES = {
-    0: 'Power OFF',
-    1: 'Standby',
-    2: 'Drying',
-    3: 'Paused',
-    4: 'Finished',
-    5: 'Error',
-    8: 'Smart Diagnosis in Progress',
-    100: 'Delay Set',
+    0x00: 'Power OFF',
+    0x01: 'Standby',
+    0x02: 'Drying',
+    0x03: 'Paused',
+    0x04: 'Finished',
+    0x05: 'Error',
+    0x08: 'Smart Diagnosis in Progress',
+    0x64: 'Delay Set',
 } as const
 type State = ValueOf<typeof STATES>
 
 const PROCESS_STATES = {
-    0: 'Detecting Load Level',
-    1: 'Steam',
-    2: 'Dry', // DRY_LV1
-    3: 'Dry', // DRY_LV2
-    4: 'Dry', // DRY_LV3
-    5: 'Cooling',
-    6: 'Anti-crease',
-    7: 'Finished',
+    0x00: 'Detecting Load Level',
+    0x01: 'Steam',
+    0x02: 'Dry', // DRY_LV1
+    0x03: 'Dry', // DRY_LV2
+    0x04: 'Dry', // DRY_LV3
+    0x05: 'Cooling',
+    0x06: 'Anti-crease',
+    0x07: 'Finished',
 } as const
 type ProcessState = ValueOf<typeof PROCESS_STATES>
 
 const COURSES = {
-    2: 'Towels',
-    4: 'Duvet',
-    5: 'Easy Care',
-    6: 'Mixed Fabric',
-    7: 'Cotton',
-    8: 'Sportswear',
-    9: 'Speed 30',
-    10: 'Delicates',
-    11: 'Wool',
-    12: 'Rack Dry',
-    14: 'Warm Air',
-    16: 'Allergy Care',
-    18: 'Condenser Care',
-    19: 'Drum Care',
-    25: 'Eco (Cotton+)',
+    0x02: 'Towels',
+    0x04: 'Duvet',
+    0x05: 'Easy Care',
+    0x06: 'Mixed Fabric',
+    0x07: 'Cotton',
+    0x08: 'Sportswear',
+    0x09: 'Speed 30',
+    0x0a: 'Delicates',
+    0x0b: 'Wool',
+    0x0c: 'Rack Dry',
+    0x0e: 'Warm Air',
+    0x10: 'Allergy Care',
+    0x12: 'Condenser Care',
+    0x13: 'Drum Care',
+    0x19: 'Eco (Cotton+)',
 } as const
 type Course = ValueOf<typeof COURSES>
 
