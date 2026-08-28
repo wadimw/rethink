@@ -55,7 +55,7 @@ const STATES = {
 } as const
 type State = ValueOf<typeof STATES>
 
-export const PROCESS_STATES = {
+const PROCESS_STATES = {
     0: 'Detecting Load Level',
     1: 'Steam',
     2: 'Dry', // DRY_LV1
