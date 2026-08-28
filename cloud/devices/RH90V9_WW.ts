@@ -180,7 +180,7 @@ export default class Device extends AABBDevice {
             buf.subarray(0, 4).equals(Buffer.from('30EC0019', 'hex')) &&
             buf.subarray(29, 2).equals(Buffer.from('0019', 'hex'))
         ) {
-            const state = this.parseDeviceStateBlock(buf.subarray(4))
+            const state = this.parseDeviceStateBlock(buf.subarray(31))
             this.publishState(state)
             return
         }
