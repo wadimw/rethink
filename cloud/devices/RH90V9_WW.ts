@@ -67,12 +67,32 @@ export const PROCESS_STATES = {
 } as const
 type ProcessState = ValueOf<typeof PROCESS_STATES>
 
+const COURSES = {
+    2: 'Towels',
+    4: 'Duvet',
+    5: 'Easy Care',
+    6: 'Mixed Fabric',
+    7: 'Cotton',
+    8: 'Sportswear',
+    9: 'Speed 30',
+    10: 'Delicates',
+    11: 'Wool',
+    12: 'Rack Dry',
+    14: 'Warm Air',
+    16: 'Allergy Care',
+    18: 'Condenser Care',
+    19: 'Drum Care',
+    25: 'Eco (Cotton+)',
+} as const
+type Course = ValueOf<typeof COURSES>
+
 interface DeviceState {
     state: State | undefined
     processState: ProcessState | undefined
     reserveTime: number | undefined
     remainTime: number | undefined
     initialTime: number | undefined
+    course: Course | undefined
 }
 
 export default class Device extends AABBDevice {
@@ -124,6 +144,15 @@ export default class Device extends AABBDevice {
                         unit_of_measurement: 'min',
                         name: 'Initial time',
                     },
+                    course: {
+                        platform: 'sensor',
+                        unique_id: '$deviceid-course',
+                        state_topic: '$this/course',
+                        name: 'Course',
+                        icon: 'mdi:pin-outline',
+                        device_class: 'enum',
+                        options: Object.values(COURSES),
+                    },
                 },
             }),
         )
@@ -152,6 +181,7 @@ export default class Device extends AABBDevice {
         const remainTimeMinute = b[2]
         const initialTimeHour = b[3]
         const initialTimeMinute = b[4]
+        const course = b[5]
         const processState = b[9]
         const reserveTimeHour = b[10]
         const reserveTimeMinute = b[11]
@@ -162,6 +192,7 @@ export default class Device extends AABBDevice {
             reserveTime: parseDuration(reserveTimeHour, reserveTimeMinute, [3, 19], [0, 59]),
             remainTime: parseDuration(remainTimeHour, remainTimeMinute, [0, 30], [0, 59]),
             initialTime: parseDuration(initialTimeHour, initialTimeMinute, [0, 30], [0, 59]),
+            course: parseEnum(COURSES, course),
         }
     }
 
@@ -171,6 +202,7 @@ export default class Device extends AABBDevice {
         this.publishProperty('reserve_time', deviceState.reserveTime ?? UNKNOWN)
         this.publishProperty('remain_time', deviceState.remainTime ?? UNKNOWN)
         this.publishProperty('initial_time', deviceState.initialTime ?? UNKNOWN)
+        this.publishProperty('course', deviceState.course ?? UNKNOWN)
     }
 
     setProperty(prop: string, mqttValue: string) {}
