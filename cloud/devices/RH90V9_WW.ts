@@ -178,7 +178,7 @@ export default class Device extends AABBDevice {
         if (
             buf.length === 56 &&
             buf.subarray(0, 4).equals(Buffer.from('30EC0019', 'hex')) &&
-            buf.subarray(29, 2).equals(Buffer.from('0019', 'hex'))
+            buf.subarray(29, 31).equals(Buffer.from('0019', 'hex'))
         ) {
             const state = this.parseDeviceStateBlock(buf.subarray(31))
             this.publishState(state)
