@@ -45,4 +45,11 @@ describe(MODEL_ID, () => {
         const props = ha.devices[DEVICE_ID].properties
         assert.equal(props.state, 'Standby')
     })
+
+    test('Sensor burst is parsed', () => {
+        const { ha, thinq } = makeDevice()
+        thinq.emit('data', buf('AA0B' + '303E' + '00BD00BD01' + 'CBBB'))
+        const props = ha.devices[DEVICE_ID].properties
+        assert.equal(props.energy, 189)
+    })
 })

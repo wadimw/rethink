@@ -95,6 +95,11 @@ interface DeviceState {
     course: Course | undefined
 }
 
+interface SensorBurst {
+    sequence: number
+    energy: number
+}
+
 export default class Device extends AABBDevice {
     constructor(HA: Connection, thinq: Thinq2Device, meta: Metadata) {
         super(HA, thinq)
@@ -153,6 +158,16 @@ export default class Device extends AABBDevice {
                         device_class: 'enum',
                         options: Object.values(COURSES),
                     },
+                    energy: {
+                        platform: 'sensor',
+                        unique_id: '$deviceid-energy',
+                        state_topic: '$this/energy',
+                        name: 'Energy',
+                        icon: 'mdi:lightning-bolt',
+                        device_class: 'energy',
+                        state_class: 'total_increasing',
+                        unit_of_measurement: 'Wh',
+                    },
                 },
             }),
         )
@@ -166,7 +181,7 @@ export default class Device extends AABBDevice {
 
     processAABB(buf: Buffer) {
         // 30EB current state:
-        // 30EB 0019 [state:25]
+        // 30EB 0019 [state block: 25]
         if (buf.length === 29 && buf.subarray(0, 4).equals(Buffer.from('30EB0019', 'hex'))) {
             const state = this.parseDeviceStateBlock(buf.subarray(4))
             this.publishState(state)
@@ -184,9 +199,17 @@ export default class Device extends AABBDevice {
             this.publishState(state)
             return
         }
+
+        // 303E sensor burst:
+        // 303E [sensor block: 25]
+        if (buf.length === 7 && buf.subarray(0, 2).equals(Buffer.from('303E', 'hex'))) {
+            const burst = this.parseSensorBurstBlock(buf.subarray(2))
+            this.publishSensor(burst)
+            return
+        }
     }
 
-    // extracts data from this dryer's device state block
+    // 30EB/30EC state block
     private parseDeviceStateBlock(b: Buffer): DeviceState {
         const state = b[0]
         const remainTimeHour = b[1]
@@ -215,6 +238,22 @@ export default class Device extends AABBDevice {
         this.publishProperty('remain_time', deviceState.remainTime ?? UNKNOWN)
         this.publishProperty('initial_time', deviceState.initialTime ?? UNKNOWN)
         this.publishProperty('course', deviceState.course ?? UNKNOWN)
+    }
+
+    // 303E sensor burst block
+    // [unknown: 2] [energy: 2 (UInt16BE)] [burst id: 1]
+    private parseSensorBurstBlock(b: Buffer): SensorBurst {
+        const energy = b.subarray(2, 4)
+        const sequence = b[4]
+
+        return {
+            energy: energy.readUInt16BE(),
+            sequence,
+        }
+    }
+
+    private publishSensor(sensorBurst: SensorBurst) {
+        this.publishProperty('energy', sensorBurst.energy)
     }
 
     setProperty(prop: string, mqttValue: string) {}
