@@ -37,6 +37,8 @@ const parseDuration = (
 
 const UNKNOWN = 'unknown' as const
 
+const booleanSensor = (value: boolean) => (value ? 'ON' : 'OFF')
+
 // note: all enum values are derived from label referenced by the modelJson;
 // in some cases, this is slightly mismatched,
 // e.g. `ecoHybrid` value 3 is named `ECOHYBRID_TURBO` but has label ref
@@ -86,6 +88,25 @@ const COURSES = {
 } as const
 type Course = ValueOf<typeof COURSES>
 
+const ERRORS = {
+    0x00: 'None',
+    0x01: 'TE1',
+    0x02: 'TE2',
+    0x04: 'TE4',
+    0x07: 'CE1',
+    0x0d: 'OE',
+    0x0e: 'ERROR_EMPTYWATER',
+    0x0f: 'dE (dE1)',
+    0x11: 'IF',
+    0x13: 'F1',
+    0x14: 'LE2',
+    0x15: 'AE',
+    0x1e: 'LE1',
+    0x25: 'dE4',
+    0x2a: 'dE2',
+} as const
+type Error = ValueOf<typeof ERRORS>
+
 interface DeviceState {
     state: State | undefined
     processState: ProcessState | undefined
@@ -93,6 +114,8 @@ interface DeviceState {
     remainTime: number | undefined
     initialTime: number | undefined
     course: Course | undefined
+    error: boolean
+    errorMessage: Error | undefined
 }
 
 interface SensorBurst {
@@ -168,6 +191,25 @@ export default class Device extends AABBDevice {
                         state_class: 'total_increasing',
                         unit_of_measurement: 'Wh',
                     },
+                    error: {
+                        platform: 'binary_sensor',
+                        unique_id: '$deviceid-error',
+                        state_topic: '$this/error',
+                        name: 'Error',
+                        icon: 'mdi:check-circle',
+                        device_class: 'problem',
+                        entity_category: 'diagnostic',
+                    },
+                    error_message: {
+                        platform: 'sensor',
+                        unique_id: '$deviceid-error-message',
+                        state_topic: '$this/error_message',
+                        name: 'Error message',
+                        icon: 'mdi:alert-circle-outline',
+                        device_class: 'enum',
+                        entity_category: 'diagnostic',
+                        options: Object.values(ERRORS),
+                    },
                 },
             }),
         )
@@ -217,6 +259,7 @@ export default class Device extends AABBDevice {
         const initialTimeHour = b[3]
         const initialTimeMinute = b[4]
         const course = b[5]
+        const errorCode = b[6]
         const processState = b[9]
         const reserveTimeHour = b[10]
         const reserveTimeMinute = b[11]
@@ -228,6 +271,8 @@ export default class Device extends AABBDevice {
             remainTime: parseDuration(remainTimeHour, remainTimeMinute, [0, 30], [0, 59]),
             initialTime: parseDuration(initialTimeHour, initialTimeMinute, [0, 30], [0, 59]),
             course: parseEnum(COURSES, course),
+            error: errorCode !== 0,
+            errorMessage: parseEnum(ERRORS, errorCode),
         }
     }
 
@@ -238,6 +283,8 @@ export default class Device extends AABBDevice {
         this.publishProperty('remain_time', deviceState.remainTime ?? UNKNOWN)
         this.publishProperty('initial_time', deviceState.initialTime ?? UNKNOWN)
         this.publishProperty('course', deviceState.course ?? UNKNOWN)
+        this.publishProperty('error', booleanSensor(deviceState.error))
+        this.publishProperty('error_message', deviceState.errorMessage ?? UNKNOWN)
     }
 
     // 303E sensor burst block
