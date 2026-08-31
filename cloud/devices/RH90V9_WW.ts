@@ -115,6 +115,14 @@ const DRY_LEVELS = {
 } as const
 type DryLevel = ValueOf<typeof DRY_LEVELS>
 
+const ECO_HYBRID = {
+    0x00: 'Not Selected',
+    0x01: 'Energy',
+    0x02: 'Normal',
+    0x03: 'Turbo',
+} as const
+type EcoHybrid = ValueOf<typeof ECO_HYBRID>
+
 interface DeviceState {
     state: State | undefined
     processState: ProcessState | undefined
@@ -125,6 +133,7 @@ interface DeviceState {
     error: boolean
     errorMessage: Error | undefined
     dryLevel: DryLevel | undefined
+    ecoHybrid: EcoHybrid | undefined
 }
 
 interface SensorBurst {
@@ -228,6 +237,15 @@ export default class Device extends AABBDevice {
                         device_class: 'enum',
                         options: Object.values(DRY_LEVELS),
                     },
+                    eco_hybrid: {
+                        platform: 'sensor',
+                        unique_id: '$deviceid-eco-hybrid',
+                        state_topic: '$this/eco_hybrid',
+                        name: 'Dry Mode (EcoHybrid)',
+                        icon: 'mdi:leaf',
+                        device_class: 'enum',
+                        options: Object.values(ECO_HYBRID),
+                    },
                 },
             }),
         )
@@ -279,6 +297,7 @@ export default class Device extends AABBDevice {
         const course = b[5]
         const errorCode = b[6]
         const dryLevel = b[7]
+        const ecoHybrid = b[8]
         const processState = b[9]
         const reserveTimeHour = b[10]
         const reserveTimeMinute = b[11]
@@ -293,6 +312,7 @@ export default class Device extends AABBDevice {
             error: errorCode !== 0,
             errorMessage: parseEnum(ERRORS, errorCode),
             dryLevel: parseEnum(DRY_LEVELS, dryLevel),
+            ecoHybrid: parseEnum(ECO_HYBRID, ecoHybrid),
         }
     }
 
@@ -306,6 +326,7 @@ export default class Device extends AABBDevice {
         this.publishProperty('error', booleanSensor(deviceState.error))
         this.publishProperty('error_message', deviceState.errorMessage ?? UNKNOWN)
         this.publishProperty('dry_level', deviceState.dryLevel ?? UNKNOWN)
+        this.publishProperty('eco_hybrid', deviceState.ecoHybrid ?? UNKNOWN)
     }
 
     // 303E sensor burst block
