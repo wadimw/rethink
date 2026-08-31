@@ -107,6 +107,14 @@ const ERRORS = {
 } as const
 type Error = ValueOf<typeof ERRORS>
 
+const DRY_LEVELS = {
+    0x00: 'Not Selected',
+    0x01: 'Iron',
+    0x03: 'Cupboard',
+    0x04: 'Extra',
+} as const
+type DryLevel = ValueOf<typeof DRY_LEVELS>
+
 interface DeviceState {
     state: State | undefined
     processState: ProcessState | undefined
@@ -116,6 +124,7 @@ interface DeviceState {
     course: Course | undefined
     error: boolean
     errorMessage: Error | undefined
+    dryLevel: DryLevel | undefined
 }
 
 interface SensorBurst {
@@ -210,6 +219,15 @@ export default class Device extends AABBDevice {
                         entity_category: 'diagnostic',
                         options: Object.values(ERRORS),
                     },
+                    dry_level: {
+                        platform: 'sensor',
+                        unique_id: '$deviceid-dry-level',
+                        state_topic: '$this/dry_level',
+                        name: 'Dry Level',
+                        icon: 'mdi:water-percent',
+                        device_class: 'enum',
+                        options: Object.values(DRY_LEVELS),
+                    },
                 },
             }),
         )
@@ -260,6 +278,7 @@ export default class Device extends AABBDevice {
         const initialTimeMinute = b[4]
         const course = b[5]
         const errorCode = b[6]
+        const dryLevel = b[7]
         const processState = b[9]
         const reserveTimeHour = b[10]
         const reserveTimeMinute = b[11]
@@ -273,6 +292,7 @@ export default class Device extends AABBDevice {
             course: parseEnum(COURSES, course),
             error: errorCode !== 0,
             errorMessage: parseEnum(ERRORS, errorCode),
+            dryLevel: parseEnum(DRY_LEVELS, dryLevel),
         }
     }
 
@@ -285,6 +305,7 @@ export default class Device extends AABBDevice {
         this.publishProperty('course', deviceState.course ?? UNKNOWN)
         this.publishProperty('error', booleanSensor(deviceState.error))
         this.publishProperty('error_message', deviceState.errorMessage ?? UNKNOWN)
+        this.publishProperty('dry_level', deviceState.dryLevel ?? UNKNOWN)
     }
 
     // 303E sensor burst block
